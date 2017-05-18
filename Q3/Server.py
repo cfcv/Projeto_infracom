@@ -24,11 +24,10 @@ class Server:
 
 random.seed(None)
 HOST = ""
-PORT = 5984
+PORT = 50984
 s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
 s.bind((HOST,PORT))
 print("Servidor Inicializado")
-#s.listen(10)
 Serv = Server(s)
 while 1:
     msg, addr = s.recvfrom(1024)
