@@ -10,6 +10,7 @@ class Game:
     __table = []
 
     def __init__(self, me, op, choice):
+        print("Oponente: ", op)
         self.__Opon = op
         self.__me = me
         self.__choice = choice
@@ -40,11 +41,11 @@ class Game:
         print("Digite as coordenadas (1<=x<=3 e 1<=y<=3)")
         posX, posY = input().split(" ")
         self.__myMove = (int(posX) - 1, int(posY) - 1)
-        if (0 <= posX <= 2) and (0 <= posY <= 2):
-            self.__me.sendto((str(myMove[0]) + "," + str(myMove[1]) + "," + str(self.__turn)).encode(), self.__Opon)
+        if (0 <= self.__myMove[0] <= 2) and (0 <= self.__myMove[1] <= 2):
+            self.__me.sendto((str(self.__myMove[0]) + "," + str(self.__myMove[1]) + "," + str(self.__turn)).encode(), self.__Opon)
             self.__turn += 1
 
-        else
+        else:
             print("Erro, variáveis erradas")
         return
 
@@ -53,28 +54,34 @@ class Game:
         while 1:
             past = time.perf_counter()
             msg, addr = self.__me.recvfrom(1024)
-            posX, posY, round = msg.decode.split(",")
+            posX, posY, round = msg.decode().split(",")
+            print("jogador: ", addr, " enviou pacote ", "(" + posX + "," + posY + "," + round + ")  ", self.__turn)
+            round = int(round)
+            posX = int(posX)
+            posY = int(posY)
             if (addr == self.__Opon) and (round == self.__turn):
                 # Checa se o pacote vem do oponente e se tem o número de rodada correto.
                 # Se não for o correto, o pacote é duplicado, então é ignorado.
                 self.__turn += 1
                 self.__table[posX][posY] = (choice + 1) % 2
+                print("Adversario colocou em: ", posX, " ", posY)
                 break
             if (self.__myMove != (-1, -1)) and (iniT - past >= 1):
                 # Se tiver se passado 1 segundo, reenvia a jogada (assume que o adversário não recebeu sua jogada)
-                self.__me.sendto((str(myMove[0]) + "," + str(myMove[1]) + "," + str(self.__turn - 1)).encode(),
+                print("reenviando")
+                self.__me.sendto((str(self.__myMove[0]) + "," + str(self.__myMove[1]) + "," + str(self.__turn - 1)).encode(),
                                  self.__Opon)
         return
 
     def run(self):
-        while not (gameFinished()):
-            if choice == 0:
-                if (turn % 2) == 0:
+        while not (self.__gameFinished()):
+            if self.__choice == 0:
+                if (self.__turn % 2) == 0:
                     self.__opTurn()
                 else:
                     self.__myTurn()
             else:
-                if (turn % 2) == 0:
+                if (self.__turn % 2) == 0:
                     self.__myTurn()
                 else:
                     self.__opTurn()
@@ -100,3 +107,4 @@ while 1:
     if player == (Phost, Pport):
         jogo = Game(s, player, choice)
         print(msg.decode())
+        jogo.run()
