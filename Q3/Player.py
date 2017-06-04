@@ -23,18 +23,14 @@ class Game:
     def __isMyTurn(self) -> bool:
         if self.__choice == 0:
             if (self.__turn % 2) == 0:
-                return False
-            else:
                 return True
+            else:
+                return False
         else:
             if (self.__turn % 2) == 0:
-                return True
-            else:
                 return False
-
-
-    def getChoice(self):
-        return  self.__choice
+            else:
+                return True
 
     def initSock(self):
         HOST = "localhost"
@@ -62,7 +58,7 @@ class Game:
                     self.__opicon = "X"
                 Phost = Phost.strip("'")
                 print(Phost, str(Pport), str(choice))
-                print("Jogador " + Phost + " " + str(Pport) + " Conectado")
+                print("Jogador " + Phost + " " + str(Pport) + " Contactado")
                 self.__me.sendto(b'Ola jogador', (Phost, Pport))
                 root.after(delay, lambda: self.__waitConf(root))
                 return
@@ -139,8 +135,6 @@ class Game:
             return 3
 
     def __myTurn(self) -> None:  # Processa as mensagens necessárias no turno do jogador.
-        if self.__timeState:
-            print("My Turn")
         self.past = time.perf_counter()
         if self.past - self.timer1 >= 5:      #Envia de 5 em 5 segundos uma comfirmação de que está conetado.
             self.__me.sendto(b'Connected', self.__Opon)
@@ -156,13 +150,15 @@ class Game:
                     self.__Opon)    #Envia jogada ao oponente
                 self.__turn += 1    #Incrementa turno
                 self.__timeState = True
+                if self.__choice == 0:
+                    self.__gui.buttons[i][j].configure(text="X")
+                elif self.__choice == 1:
+                    self.__gui.buttons[i][j].configure(text="O")
                 self.__table[self.__myMove[0]][self.__myMove[1]] = self.__choice   #Salva jogada na tabela
                 return True
         return False
 
     def __opTurn(self) -> None:
-        if self.__timeState:
-            print("Op Turn")
         self.past = time.perf_counter()
         if ((self.past - self.timer1) >= 20): #Se tiver passado 20 segundos sem nenhuma comunicação, desconeta.
             print("Jogador desconectado!")
@@ -203,8 +199,10 @@ class Game:
             self.timer1 = self.timer2 = time.perf_counter()
         if not (x):
             if self.__isMyTurn():
+                self.__gui.info.configure(text="Sua vez.")
                 self.__myTurn()
             else:
+                self.__gui.info.configure(text="Aguarde oponente.")
                 self.__opTurn()
         else:
             if x == 1:
