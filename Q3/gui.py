@@ -47,11 +47,7 @@ class Interface:
 
     def butP (self, i, j):
         if self.game.sendPlay(i,j):
-            choice = self.game.getChoice()
-            if choice == 0:
-                self.buttons[i][j].configure(text = "X")
-            elif choice == 1:
-                self.buttons[i][j].configure(text="O")
+            self.info.configure(text="Aguarde oponente.")
         return
 
 int = Interface()
