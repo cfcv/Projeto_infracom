@@ -2,6 +2,8 @@ import socket
 import time
 import select
 delay = 10
+HOST = "192.168.0.8"
+PORT = 50984
 
 class Game:
 
@@ -33,8 +35,6 @@ class Game:
                 return True
 
     def initSock(self):
-        HOST = "localhost"
-        PORT = 50984
         self.__me = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.__me.sendto(b'Get Game', (HOST, PORT))
         return
@@ -43,10 +43,7 @@ class Game:
         ret = self.__nbRecv()
         if type(ret) == type((1,2)):
             msg, addr = ret
-            if msg == b'Wait Opponent':
-                root.after(delay, lambda: self.connect(root))
-                return
-            else:
+            if msg != b'Ola jogador' and msg != b'Wait Opponent':
                 Phost, Pport, choice = msg.decode().split(',')
                 Pport = int(Pport)
                 self.__choice = int(choice)
@@ -60,6 +57,7 @@ class Game:
                 print(Phost, str(Pport), str(choice))
                 print("Jogador " + Phost + " " + str(Pport) + " Contactado")
                 self.__me.sendto(b'Ola jogador', (Phost, Pport))
+                self.timer1 = time.perf_counter()
                 root.after(delay, lambda: self.__waitConf(root))
                 return
         root.after(delay, lambda: self.connect(root))
@@ -77,7 +75,12 @@ class Game:
             else:
                 root.after(delay, lambda: self.__waitConf(root))
         else:
-            root.after(delay, lambda: self.__waitConf(root))
+            past = time.perf_counter()
+            if past - self.timer1 >= 10:
+                self.__me.sendto(b'Get Game', (HOST,PORT))
+                root.after(delay, lambda: self.connect(root))
+            else:
+                root.after(delay, lambda: self.__waitConf(root))
         return
 
     def __nbRecv(self):
@@ -139,7 +142,6 @@ class Game:
         if self.past - self.timer1 >= 5:      #Envia de 5 em 5 segundos uma comfirmação de que está conetado.
             self.__me.sendto(b'Connected', self.__Opon)
             self.timer1 = time.perf_counter() #E seta o timer inicial para o tempo atual.
-
 
     def sendPlay(self, i, j):
         if self.__isMyTurn():
