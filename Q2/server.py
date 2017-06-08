@@ -1,6 +1,21 @@
 import tkinter as tk
 import socket
 import sqlite3
+import os
+import re
+
+
+class RegularExpression(object):
+	def procura(self, fname, name):
+		self.file = open(fname,'r')
+		for line in self.file:
+			if(not line.startswith('d')): continue
+			self.palavras = line.split()
+			self.foldername = self.palavras[8]			
+			if(self.foldername == name):
+				return True
+		return False
+
 
 class DataBase(object):
 	def __init__(self):
@@ -13,26 +28,28 @@ class DataBase(object):
 				login UNIQUE,
 				password VARCHAR(20)
 			);''')
+	
 
-class Folder(object):
-	def __init__(self, n):
-		self.name = n
-		self.files = list()
-		self.children_folders = list()
-		self.permissions = list()
-		#Debug
-		print('Folder:',self.name,'created.')
 
 class Server(object):
 	def __init__(self):
-		self.root = Folder('root')
+		#self.root = Folder('root')
 		self.DB = DataBase()
+		self.regular = RegularExpression()
+		self.out = "output.txt"
 		#self.socket = Server_socket()
 		#Debug
 		print('Server created.')
 
 
-		
+	def addFolder(self, name):
+		os.system("ls -l > "+self.out)
+		if(self.regular.procura(self.out, name)):
+			print("Sorry this folder already exists("+name+")")
+		else:
+			pass			
+			#os.system("mkdir"+name)		
+			#self.DB.insert(user.path+"/"+name)
 
 #root = tk.Tk()
 #root.title('Projeto Infracom(Server)')
@@ -46,3 +63,4 @@ class Server(object):
 
 #------------------ MAIN ------------------
 servidor = Server()
+servidor.addFolder("root")
