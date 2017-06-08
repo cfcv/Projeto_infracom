@@ -2,18 +2,20 @@ import tkinter as tk
 import socket
 
 
-class Conexão(object):
+class Conexao(object):
 	def __init__(self):
-		self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.ip = '127.0.0.1'
-		self.port = 5399
+		self.port = 35298
 		#Debug
 		print("Client socket created.")
+		self.sock.connect((self.ip,self.port))
+		print("Connected")
 		
 	def send(self,mss):
 		#Debug
 		print("Enviando mensagem:",mss)
-		self.sock.sendto(mss.encode(), (self.ip,self.port))
+		self.sock.send(mss.encode())
 
 class GUI_User(object):
 	def __init__(self,master): #,conection, address):
@@ -32,23 +34,24 @@ class GUI_User(object):
 		self.username = tk.Label(self.frame2,text='Username:', bg='black', fg='green', font=("times",12,"bold"), padx=50)
 		self.senha = tk.Label(self.frame2, text='Password:', bg='black', fg='green', font=("times",12,"bold"), padx=51)
 		self.espaco1 = tk.Label(self.frame2, bg='black', padx=87, pady=15)
-		self.espaco2 = tk.Label(self.frame2, bg='black', padx=93, pady=15)		
-		self.repeat = tk.Label(self.frame4, text='Repeat password')
+		self.espaco2 = tk.Label(self.frame2, bg='black', padx=93, pady=15)
+		self.espaco3 = tk.Label(self.frame5, bg='black', padx=35, pady=5)		
+		self.repeat = tk.Label(self.frame4, text='Repeat password:', bg='black', font=("times",12,"bold"), fg='green', padx=26)
 
 		#---- Entrys ----
 		self.user = tk.Entry(self.frame2, width=22, bd=4, bg='green', fg='black', highlightcolor='red')
 		self.senhaEntry = tk.Entry(self.frame2, width=22, bd=4, bg='green', fg='black', highlightcolor='red')
-		self.repeatEntry = tk.Entry(self.frame4)
+		self.repeatEntry = tk.Entry(self.frame4, width=22, bd=4, bg='green', fg='black', highlightcolor='red')
 		
 		#---- Buttons ----
 		self.submit = tk.Button(self.frame3, text='Log in', background='green', command=self.enviar, borderwidth=4, width=10, cursor='dot')
 		self.createAccount = tk.Button(self.frame3, text='Create an account', background='red', command=self.criar_conta, borderwidth=4, cursor='cross')
-		self.create = tk.Button(self.frame5, text='Create', command=self.create_buttom)
+		self.create = tk.Button(self.frame5, text='Create', background='red', width=5, borderwidth=3, command=self.create_buttom)
 
-		#Debug
+		#Debu3
 		print("Client is running")
 		#socket
-		self.conn = Conexão()
+		self.conn = Conexao()
 
 	def enviar(self):
 		self.userText = self.user.get()
@@ -80,6 +83,7 @@ class GUI_User(object):
 		self.repeat.pack(side='left')
 		self.repeatEntry.pack(side='right')
 		self.frame5.pack()
+		self.espaco3.pack()
 		self.create.pack()
 
 	def create_buttom(self):
@@ -92,7 +96,8 @@ class GUI_User(object):
 #-------------------------- MAIN -------------------------- 		
 root = tk.Tk()
 root.title('Sistema de arquivos')
-#Os dois comando abaixo são usados para definir o tamanho da janela
+
+
 root.resizable(width=False, height=False)
 root.geometry('{}x{}'.format(700,500))
 root.configure(background='black')
