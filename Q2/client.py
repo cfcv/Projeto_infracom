@@ -17,11 +17,18 @@ class Conexao(object):
 		print("Enviando mensagem:",mss)
 		self.sock.send(mss.encode())
 
+	def wait_message(self):
+		#Debug
+		print("Waiting response")
+		while True:
+			self.data = self.sock.recv(1024)
+			if(len(self.data) < 1): continue
+			break
+		return data
+
 class GUI_User(object):
-	def __init__(self,master): #,conection, address):
-		#self.conn = conection
-		#self.addr = address
-		
+	def __init__(self,master): 
+
 		#---- Frames ----
 		self.frame1 = tk.Frame(master)
 		self.frame2 = tk.Frame(master)
@@ -62,6 +69,11 @@ class GUI_User(object):
 		else:
 			self.message = "getuser%"+self.userText+"%"+self.senhaText
 			self.conn.send(self.message)
+			self.feed_back = self.conn.wait_message()
+			if(self.feed_back == "ACK"):
+				print("Usuario correto")
+			else:
+				print("Usuário ou senha incorretos")
 
 	def inicializar(self):
 		self.frame1.pack()
@@ -90,7 +102,17 @@ class GUI_User(object):
 		self.userText = self.user.get()
 		self.senhaText = self.senhaEntry.get()
 		self.repeatText = self.repeatEntry.get()
-		print(self.userText,self.senhaText,self.repeatText)
+		if((len(self.userText) < 1) or (len(self.senhaText) < 1) or (len(self.repeatText) < 1)):
+			print("Preencha todos os campos")
+		else:
+			#Debug
+			print(self.userText,self.senhaText,self.repeatText)
+			if(self.senhaText == self.repeatText):
+				self.message = "createuser%"+self.userText+"%"+self.senhaText
+				self.conn.send(self.message)
+				#Wait response
+			else:
+				print("As senhas digitadas devem ser iguais")
 
 
 #-------------------------- MAIN -------------------------- 		
