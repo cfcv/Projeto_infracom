@@ -25,3 +25,6 @@
  Caso contrário, o processo segue o fluxo.
  obs.2: A função __myTurn serve apenas para enviar a mensagem 'Connected' (confirmação de conexão), sendo a função sendPlay responsável por
  enviar ao adversário a sua jogada quando o jogador clica no botão em sua vez.
+
+# How to run
+TODO

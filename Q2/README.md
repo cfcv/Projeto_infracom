@@ -9,3 +9,7 @@
 
 -> As pastas do usuário A compartilhadas com o usuário B será colocada na tabela UsrDirs com o ID de B e o ID da pasta compartilhada.
 ...
+
+
+# How to run
+TODO
