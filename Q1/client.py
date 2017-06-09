@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
-from socket import socket, gethostbyname, AF_INET, SOCK_DGRAM
-import _thread
-import time
+from socket import *
 
 # RXTX UDP
 SERVER_IP   = '192.168.15.8'
