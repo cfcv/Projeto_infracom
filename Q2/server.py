@@ -1,49 +1,9 @@
 import tkinter as tk
-import socket
-import sqlite3
 import os
-import re
 import _thread
-
-def execute(c, client, data):
-    lista = data.split('%')
-    if(c == 1):
-        #Debug
-        print("Executando comando getuser")
-
-    elif(c == 2):
-        #Debug
-        print("Executando comando createuser")
+import thread
 
 
-def check_command(string):
-    check = string.split('%')
-    command = check[0]
-    #Debug
-    print("Commando ",command,"reconhecido")
-    if(command == "getuser"):
-        return 1
-    elif(command == "createuser"):
-        return 2
-    else:
-        return 0
-
-
-def thread_func(client,addr):
-    #Debug
-    print("Thread criada para cliente:", addr)
-    while True:
-        data = client.recv(1024)
-        if (len(data) < 1): continue
-        data = data.decode()
-        #Debug
-        print("Mensagem recebida de",addr,":",data)
-        c = check_command(data)
-        if(c == -1):
-            print("Closing connection to", addr)
-            client.close()
-            break
-        execute(c, client, data)
 
 class Server_socket(object):
     def __init__(self):
@@ -59,63 +19,14 @@ class Server_socket(object):
         print("Waiting for connection.")
         while True:
             try:
-                con, client = self.sock.accept()
+                con, addr = self.sock.accept()
             finally:
-                print("Get connection from:", (client))
-                _thread.start_new_thread(thread_func, (con,client))
-
-class DataBase(object):
-    def __init__(self):
-        self.conn = sqlite3.connect('users.db')
-        self.cur = self.conn.cursor()
-        self.cur.executescript("""
-            CREATE TABLE IF NOT EXISTS Users(
-                id INTEGER PRIMARY KEY AUTOINCREMENT,               
-                login VARCHAR(20) UNIQUE,
-                password VARCHAR(20)
-            );
-            
-            CREATE TABLE IF NOT EXISTS Dirs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                path VARCHAR(100)
-            );
-            CREATE TABLE IF NOT EXISTS UsrDirs(
-                usrID INTEGER,
-                dirID INTEGER,
-                constraint UsrDir_pk PRIMARY KEY (usrID,dirID),
-                constraint usr_fk FOREIGN KEY (usrID) REFERENCES Users,
-                constraint dir_fk FOREIGN KEY (dirID) REFERENCES Dirs
-            );""")
-
-    def newFolder(self, login, folderName):
-        self.cur.execute("""
-        INSERT INTO Dirs(path) VALUES (?)""", login+"/"+folderName)
-        self.conn.commit()
-
-    def newUser(self, login, password):
-        self.cur.execute("""
-        INSERT INTO Users(login, password) VALUES (?,?)""", (login, password))
-        self.cur.execute("""
-        INSERT INTO Dirs(path) VALUES (?)""", login)
-        self.conn.commit()
-
-    def newUsrDir(self, usrID, dirID):
-        self.cur.execute("""
-        INSERTO INTO UsrDirs(usrID, dirID) VALUES (?,?)""", (usrID, dirID))
-        self.conn.commit()
-
-    def check_user(self, usuario, senha):
-        self.cur.execute("""SELECT login, password FROM Users WHERE login=(?) AND password=(?)""", (usuario,senha))
-        self.result = self.cur.fetchone()
-        if(self.result is None):
-            return False
-        else:
-            return True
-
+                print("Get connection from:", (addr))
+                threadObj = thread.Thread(con,addr)
+                _thread.start_new_thread(threadObj.thread_func, ())
 
 class Server(object):
     def __init__(self):
-        self.DB = DataBase()
         self.socket = Server_socket()
         # Debug
         print('Server created.')
