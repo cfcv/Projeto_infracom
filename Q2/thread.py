@@ -1,6 +1,8 @@
 import database
 import socket
 
+
+
 class Thread:
 
     def __init__(self, con, addr):
@@ -11,8 +13,11 @@ class Thread:
 
     # cmd num:
     # -1 -> close
-    # 1 -> getuser
-    # 2 -> create user
+    # 1 -> getuser(login, senha)
+    # 2 -> create user(login, senha)
+    # 3 -> getfile(path/name)
+    # 4 -> pushfile(path/name, tamanho)
+    # 5 -> listfiles(directory)
     def execute(self, c, data):
         lista = data.split('%')
         if (c == 1):
@@ -31,8 +36,21 @@ class Thread:
             print("Executando comando createuser")
             cmd, login, senha = data.split('%')
             self.user = self.DB.newUser(login, senha)
-            msg = b'Usuario ' + self.user.login.encode() + b' criado/logado.'
+            msg = b''
+            if isinstance(self.user, user.User):
+                msg = b'Usuario ' + self.user.login.encode() + b' criado/logado.'
+            else:
+                msg = b'Nome de usuario ja existente.'
             self.conSock.send(msg)
+        elif (c == 3):
+            print("Executando comando getfile")
+        elif (c == 4):
+            print("Executando comando pushfile")
+            cmd, pathName, tam = data.split('%')
+            file = b''
+            while len(file) <= tam:
+                file = file + self.conSock.recv(4096)
+            # salva arquivo em login/path/nome
 
 
     def check_command(self, string):
@@ -44,6 +62,12 @@ class Thread:
             return 1
         elif (command == "createuser"):
             return 2
+        elif (command == "getfile"):
+            return 3
+        elif (command == "pushfile"):
+            return 4
+        elif (command == "listfiles"):
+            return 5
         elif (command == "close"):
             return -1
         else:
