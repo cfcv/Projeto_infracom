@@ -15,42 +15,94 @@ class Thread:
     # -1 -> close
     # 1 -> getuser(login, senha)
     # 2 -> create user(login, senha)
-    # 3 -> getfile(path/name)
-    # 4 -> pushfile(path/name, tamanho)
-    # 5 -> listfiles(directory)
+    # 3 -> getfile("path/name")
+    # 4 -> pushfile("path/name", tamanho)
+    # 5 -> listfiles("directory")
     def execute(self, c, data):
         lista = data.split('%')
         if (c == 1):
-            # Debug
+            # Procura pelo usuario fornecido, e se senha estiver correta, loga.
             print("Executando comando getuser")
             login, senha = (lista[1], lista[2])
             self.user = self.DB.getUser(login, senha)
             msg = b''
             if isinstance(self.user, user.User):
-                msg = b'Usuario ' + self.user.login.encode() + b' logado.'
+                msg = b'Usuario ' + self.user.login.encode() + b' logado'
             else:
-                msg = b'Usuario ou Senha incorretos.'
+                msg = b'Usuario ou Senha incorretos'
             self.conSock.send(msg)
         elif (c == 2):
-            # Debug
+            # Cria novo usuario e loga no mesmo
             print("Executando comando createuser")
             cmd, login, senha = data.split('%')
             self.user = self.DB.newUser(login, senha)
-            msg = b''
             if isinstance(self.user, user.User):
-                msg = b'Usuario ' + self.user.login.encode() + b' criado/logado.'
+                msg = b'Usuario ' + self.user.login.encode() + b' criado/logado'
             else:
-                msg = b'Nome de usuario ja existente.'
+                msg = b'Nome de usuario ja existente'
             self.conSock.send(msg)
         elif (c == 3):
-            print("Executando comando getfile")
+            # Se estiver logado, envia arquivo para cliente
+            if self.user != None:
+                print("Executando comando getfile")
+                self.conSock.send(b'Ok')
+                cmd, fname = data.split("%")
+                try:
+                    file = open(self.user.login+"/"+fname.encode(), 'r')
+                except:
+                    msg = b'Arquivo inexistente'
+                    print(msg.decode()+".")
+                    self.conSock.send(msg)
+                    return
+                i = 0
+                while i < len(file):
+                    msg = file.read(4096)
+                    self.conSock.send(msg)
+                    i += 4096
+            else:
+                print("Nao esta logado.")
+                msg = b'Eh preciso logar'
+                self.conSock.send(msg)
         elif (c == 4):
-            print("Executando comando pushfile")
-            cmd, pathName, tam = data.split('%')
-            file = b''
-            while len(file) <= tam:
-                file = file + self.conSock.recv(4096)
-            # salva arquivo em login/path/nome
+            # Se estiver logado, recebe arquivo do cliente
+            if self.user != None:
+                print("Executando comando pushfile")
+                self.conSock.send(b'Ok')
+                cmd, pathName, tam = data.split('%')
+                file = open(self.user.login+"/"+pathName, 'w')
+                while len(file) <= tam:
+                    block = self.conSock.recv(4096)
+                    file.write(block.decode())
+            else:
+                print("Nao esta logado.")
+                msg = b'Eh preciso logar'
+                self.conSock.send(msg)
+        elif (c == 5):
+            # Se estiver logado, envia ao cliente a arvore de diretorios/arquivos
+            if self.user != None:
+                self.conSock.send(b'Ok')
+                msg = self.__listfiles(self.user.login)
+                self.conSock.send(msg)
+            else:
+                print("Nao esta logado.")
+                msg = b'Eh preciso logar'
+                self.conSock.send(msg)
+
+    def __listfiles(self, path):
+        n = path.count("/")
+        scan = os.scandir(path)
+        flist = [(n * "    " + x.name + "\n") for x in scan if x.is_file()]
+        scan = os.scandir(path)
+        dlist = [x.name for x in scan if x.is_dir()]
+        msg = b""
+        for file in flist:
+            msg = msg + file.encode()
+        for dir in dlist:
+            msg = msg + n*b"    "+ b"[DIR] " + dir + b":\n" + self.__listfiles(path + "/" + dir)
+        return msg
+
+
+
 
 
     def check_command(self, string):
