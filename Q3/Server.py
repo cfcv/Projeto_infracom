@@ -1,5 +1,6 @@
 import socket
 import random
+import select
 
 class Server:
     __playerList = []
@@ -30,6 +31,11 @@ s.bind((HOST,PORT))
 print("Servidor Inicializado")
 Serv = Server(s)
 while 1:
-    msg, addr = s.recvfrom(1024)
-    if msg == b'Get Game':
-        Serv.insert(addr)
+    ready_to_read, ready_to_write, in_error = select.select([s], [], [], 0)  # Checa se há pacotes no buff
+    for sock in ready_to_read:  # se ready_to_read nao for uma lista vazia executa isso
+        try:
+            msg, addr = sock.recvfrom(1024)
+            if msg == b'Get Game':
+                Serv.insert(addr)
+        except:
+            pass

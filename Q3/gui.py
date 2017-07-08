@@ -8,10 +8,10 @@ class Interface:
         self.root.geometry('400x400')
         # frame esquerda
         self.frameL = tk.Frame(self.root, width=70, height=260, bg='Grey')
-        self.frameL.grid(row=1, column=0, sticky="WNS")
+        self.frameL.grid(row=1, column=0, sticky="WNSE")
         # frame direita
-        self.frameR = tk.Frame(self.root, width=70, height=260, padx=2, pady=2, bg='Grey')
-        self.frameR.grid(row=1, column=2, sticky="E")
+        self.frameR = tk.Frame(self.root, width=70, height=260, bg='Grey')
+        self.frameR.grid(row=1, column=2, sticky="EWNS")
         # frame topo
         self.frameT = tk.Frame(self.root, width=400, height=70, bg='Blue')
         self.frameT.grid(row=0, column=0, columnspan=3, sticky="N")
@@ -41,7 +41,7 @@ class Interface:
         self.player.pack()
         self.game = pl.Game(self)
         self.game.initSock()
-        self.game.connect(self.root)
+        self.game.connect()
         self.root.mainloop()
 
 
