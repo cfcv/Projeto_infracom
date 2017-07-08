@@ -1,7 +1,7 @@
 import tkinter as tk
-import os
 import _thread
 import thread
+import socket
 
 
 
@@ -38,8 +38,8 @@ class Server(object):
 
 # ------------------ MAIN ------------------
 servidor = Server()
-#servidor.addFolder("root")
 servidor.main()
+
 
 
 

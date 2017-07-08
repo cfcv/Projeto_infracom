@@ -13,11 +13,13 @@ class Thread:
     # cmd num:
     # -1 -> close
     # 1 -> getuser(login, senha)
-    # 2 -> create user(login, senha)
+    # 2 -> createuser(login, senha)
     # 3 -> getfile("path/name")
     # 4 -> pushfile("path/name", tamanho)
-    # 5 -> listfiles("directory")
-    # 6 -> share(usr, "directory/file")
+    # 5 -> listfiles
+    # 6 -> sharefile(usr, "directory/file")
+    # 7 -> sharedir(usr, "directory")
+    # 8 -> createdir("directory")
     def execute(self, c, data):
         lista = data.split('%')
         if (c == 1):
@@ -40,11 +42,39 @@ class Thread:
             # Se estiver logado, envia ao cliente a arvore de diretorios/arquivos
             if self.user != None:
                 msg = self.__listfiles("root/"+self.user.login)
+                msg = msg + b'\n' + self.__listShared()
+                print(msg.decode())
                 self.conSock.send(msg)
             else:
                 print("Nao esta logado.")
                 msg = b'Eh preciso logar'
                 self.conSock.send(msg)
+        elif (c == 6):
+            print("Executando comando sharefile.")
+            self.__sharefile(lista)
+        elif (c == 7):
+            print("Executando comando sharedir")
+            usr, path = (lista[1], lista[2])
+            if os.path.isdir("root/" + self.user.login + "/" + path):
+                try:
+                    if self.__sharedir(lista):
+                        self.conSock.send(b'Diretorio compartilhado com sucesso')
+                    else:
+                        self.conSock.send(b'Usuario invalido.')
+                except:
+                    self.conSock.send(b'Houve um erro no compartilhamento do diretorio.')
+            else:
+                print(path + " -> is not a valid path")
+                self.conSock.send(path.decode() + b' -> nao eh um caminho valido.')
+        elif (c == 8):
+            print("Executando comando createdir")
+            pathName = lista[1] + "/"
+            try:
+                self.__createDir(lista)
+                self.conSock.send(b'Diretorio criado com sucesso.')
+            except:
+                self.conSock.send(b'Houve um erro na criacao do diretorio.')
+
 
     def __getUser(self, lista):
         login, senha = (lista[1], lista[2])
@@ -67,17 +97,21 @@ class Thread:
 
     def __getFile(self, lista):
         if self.user != None:
-            self.conSock.send(b'Ok')
             fname = lista[1]
-            print("root/" + self.user.login + "/" + fname)
+            file = None
+            print("opening file: root/" + self.user.login + "/" + fname)
             try:
                 file = open("root/"+self.user.login + "/" + fname, 'r')
             except:
-                msg = b'Arquivo inexistente'
-                print(msg.decode() + ".")
-                self.conSock.send(msg)
-                return
+                if self.DB.isShared(self.user.id, fname):
+                    file = open("root/" + fname)
+                else:
+                    msg = b'Arquivo inexistente'
+                    print(msg.decode() + ".")
+                    self.conSock.send(msg)
+                    return
             msg = file.read().encode()
+            self.conSock.send(b'Ok%'+str(len(msg)).encode())
             self.conSock.send(msg)
         else:
             print("Nao esta logado.")
@@ -86,40 +120,98 @@ class Thread:
 
     def __pushFile(self, lista):
         if self.user != None:
-            self.conSock.send(b'Ok')
-            pathName, tam = (lista[1], lista[2])
-            os.makedirs("root/" + self.user.login + "/" + os.path.dirname(pathName), exist_ok=True)
-            file = open("root/" + self.user.login + "/" + pathName, 'w+')
-            rcvlen = 0
-            tam = int(tam)
-            while rcvlen <= tam:
-                block = self.conSock.recv(4096)
-                rcvlen += 4096
-                file.write(block.decode())
+            try:
+                # Separa pathName e tamanho do arquivo. Se for um caminho válido, abre um arquivo em modo escrita,
+                # e recebe pacotes de 4096 bytes até completar o tamanho do arquivo. Confirma o recebimento enviando um OK
+                pathName, tam = (lista[1], lista[2])
+                if os.path.isabs("/root/" + self.user.login + "/" + pathName):
+                    self.__createDir(pathName)
+                    file = open("root/" + self.user.login + "/" + pathName, 'w+')
+                    rcvlen = 0
+                    tam = int(tam)
+                    while rcvlen <= tam:
+                        block = self.conSock.recv(4096)
+                        rcvlen += 4096
+                        file.write(block.decode())
+                    self.conSock.send(b'Ok')
+                else:
+                    self.conSock.send(b'Path invalida.')
+            except:
+                print("Houve um erro no processo de salvar o arquivo.")
+                self.conSock.send(b'Erro no procedimento. Tente novamente.')
         else:
             print("Nao esta logado.")
             msg = b'Eh preciso logar'
             self.conSock.send(msg)
+        return
+
+    def __createDir(self, pathName):
+        os.makedirs("root/" + self.user.login + "/" + os.path.dirname(pathName), exist_ok=True)
+        return
 
     def __listfiles(self, path) -> bytes:
-        n = path.count("/")
-        scan = os.scandir(path)
-        flist = [(n * "    " + x.name + "\n") for x in scan if x.is_file()]
-        scan = os.scandir(path)
-        dlist = [x.name for x in scan if x.is_dir()]
+        n = path.count("/") - 1
+        print("n: ", n)
+        flist, dlist = self.__scandir(path)
         msg = b""
         for file in flist:
-            msg = msg + file.encode()
+            msg = msg + n * b"    " + file.encode() + b"\n"
         for dir in dlist:
             msg = msg + n*b"    " + b"[DIR] " + dir.encode() + b":\n" + self.__listfiles(path + "/" + dir)
         return msg
 
+    def __listShared(self) -> bytes:
+        ret = b'[ SHARED ]:\n'
+        if self.user != None:
+            shr = self.DB.getSharedFiles(self.user.id)
+            if shr == None or len(shr) == 0:
+                print("None wtf.!!!")
+            for file in shr:
+                file = file[0]
+                print("file: ", file)
+                ret = ret + b'  ' + file.encode() + b'\n'
+        else:
+            print("Nao esta logado.")
+            msg = b'Eh preciso logar'
+            self.conSock.send(msg)
+        return ret
+
+    def __sharefile(self, lista):
+        usr, path = (lista[1], lista[2])
+        path = self.user.login +"/"+path
+        if os.path.isfile("root/"+path):
+            if self.DB.newUsrFile(usr, path):
+                self.conSock.send(b'Arquivo compartilhado com sucesso.')
+            else:
+                self.conSock.send(b'Usuario invalido.')
+        else:
+            print("is not file")
+            self.conSock.send(b'Path is not a file.')
+
+    def __sharedir(self, lista):
+        ret = True
+        usr, path = (lista[1], lista[2])
+        flist, dlist = self.__scandir("root/"+ self.user.login + "/" + path)
+        for file in flist:
+            if not self.DB.newUsrFile(usr, self.user.login+ "/" + path+"/"+file):
+                return False
+        for dir in dlist:
+           ret = ret and self.__sharedir([" ", usr, path+"/"+dir])
+        return ret
+
+    def __scandir(self, path):
+        n = path.count("/") - 1
+        scan = os.scandir(path)
+        flist = [(x.name) for x in scan if x.is_file()]
+        scan = os.scandir(path)
+        dlist = [x.name for x in scan if x.is_dir()]
+        return (flist, dlist)
 
     def check_command(self, string):
         check = string.split('%')
         command = check[0]
         # Debug
-        print("Commando ", command, " reconhecido")
+        #print("Commando ", command, " reconhecido")
         if (command == "getuser"):
             return 1
         elif (command == "createuser"):
@@ -130,6 +222,12 @@ class Thread:
             return 4
         elif (command == "listfiles"):
             return 5
+        elif (command == "sharefile"):
+            return 6
+        elif (command == "sharedir"):
+            return 7
+        elif (command == "createdir"):
+            return 8
         elif (command == "close"):
             return -1
         else:
@@ -157,6 +255,7 @@ class Thread:
             c = self.check_command(data)
             if (c == -1):
                 print("Closing connection to", self.conAddr)
-                client.close()
+                self.DB.closeDB()
+                self.conSock.close()
                 break
             self.execute(c, data)

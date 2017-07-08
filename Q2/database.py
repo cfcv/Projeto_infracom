@@ -17,12 +17,12 @@ class DataBase(object):
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 path VARCHAR(100) UNIQUE
             );
-            CREATE TABLE IF NOT EXISTS UsrDirs(
+            
+            CREATE TABLE IF NOT EXISTS UsrFile(
                 usrID INTEGER,
-                dirID INTEGER,
-                constraint UsrDir_pk PRIMARY KEY (usrID,dirID),
-                constraint usr_fk FOREIGN KEY (usrID) REFERENCES Users,
-                constraint dir_fk FOREIGN KEY (dirID) REFERENCES Dirs
+                fpath VARCHAR2(100),
+                constraint UsrFile_pk PRIMARY KEY (usrID,fpath),
+                constraint usr_fk FOREIGN KEY (usrID) REFERENCES Users
             );""")
 
     def newFolder(self, login, folderName):
@@ -45,17 +45,29 @@ class DataBase(object):
             return self.getUser(login, password)
         return None
 
-    def newUsrDir(self, usr, dir):
-        """ Adiciona na tabela UsrDirs. 
-            Será usada posteriormente para o compartilhamento de arquivos e pastas."""
+    def newUsrFile(self, usr, fpath):
         if (self.userExists(usr)):
             self.cur.execute("""SELECT id FROM Users WHERE login=(?)""", (usr,))
-            usrID = self.cur.fetchone()
-            self.cur.execute("""SELECT id FROM Dirs Where path=(?)""", (dir,))
-            dirID = self.cur.fetchone()
-            self.cur.execute("""
-            INSERT INTO UsrDirs(usrID, dirID) VALUES (?,?)""", (usrID, dirID))
+            usrID = self.cur.fetchone()[0]
+            self.cur.execute("""INSERT INTO UsrFile(usrID, fpath) VALUES (?,?)""", (usrID, fpath))
             self.conn.commit()
+            return True
+        else:
+            print("User " + usr + " does not exist.")
+            return False
+
+    def getSharedFiles(self, id):
+        self.cur.execute("""SELECT fpath FROM UsrFile WHERE usrID=(?)""", (id,))
+        ret = self.cur.fetchall()
+        return ret
+
+    def isShared(self, id, fpath) -> bool:
+        self.cur.execute("""SELECT usrID FROM UsrFile WHERE usrID=(?) AND fpath=(?)""", (id, fpath))
+        ret = self.cur.fetchone()
+        if ret == None:
+            return False
+        else:
+            return True
 
     def check_user(self, usuario, senha) -> bool:
         self.cur.execute("""SELECT id FROM Users WHERE login=(?) AND password=(?)""", (usuario, senha))
@@ -72,6 +84,7 @@ class DataBase(object):
             return False
         else:
             return True
+
     def getUser(self, usuario, senha):
         self.cur.execute("""SELECT login, password, id FROM Users WHERE login=(?) AND password=(?)""", (usuario, senha))
         result = self.cur.fetchone()
