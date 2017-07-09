@@ -12,23 +12,21 @@ PORT_NUMBER_SERVER = 10003
 sock = socket(AF_INET, SOCK_STREAM)
 sock.connect( (SERVER_IP, PORT_NUMBER_SERVER) )
 
-message = ""
-while str(message).upper().find("SAIR") < 0:
-    # Enviando
-    message = input('Digite a msg e\\ou \"sair\" para sair\n')
-    sock.sendall(message.encode('utf-8'))
+message = """ """
 
-    # Wait for it...
-    print("...")
+## Enviando o GET
+sock.sendall(message.encode('utf-8'))
 
-    # Caso a resposta venha fragmentada
-    amount_received = 0
-    amount_expected = len(message)
+## Recebendo a resposta
 
-    while amount_received < amount_expected:
-        message = sock.recv(1024)
-        amount_received += len(message)
-        print (message.decode('utf-8'))
+amount_received = 0
+amount_expected = len(message)
+
+# Caso a resposta venha fragmentada
+while amount_received < amount_expected:
+    message = sock.recv(1024)
+    amount_received += len(message)
+    print (message.decode('utf-8'))
 
 print ('Fechando o socket')
 sock.close()
