@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
 
-# run with python not python3
-
 import sys
 from socket import *
 
-# Create a TCP/IP socket
+### Coloque o IP do seu servidor aqui ###
+SERVER_IP   = '192.168.25.96'
+### Caso queira alterar essa porta lembre-se de altere tambem no client ###
+PORT_NUMBER_SERVER = 10003
+
+
 sock = socket(AF_INET, SOCK_STREAM)
+sock.connect( (SERVER_IP, PORT_NUMBER_SERVER) )
 
-# Connect the socket to the port where the server is listening
-server_address = ('192.168.15.8', 10000)
-print >>sys.stderr, 'connecting to %s port %s' % server_address
-sock.connect(server_address)
+message = ""
+while str(message).upper().find("SAIR") < 0:
+    # Enviando
+    message = input('Digite a msg e\\ou \"sair\" para sair\n')
+    sock.sendall(message.encode('utf-8'))
 
-try:
-    
-    # Send data
-    message = 'This is the message.  It will be repeated.'
-    print >>sys.stderr, 'sending "%s"' % message
-    sock.sendall(message)
+    # Wait for it...
+    print("...")
 
-    # Look for the response
+    # Caso a resposta venha fragmentada
     amount_received = 0
     amount_expected = len(message)
-    
-    while amount_received < amount_expected:
-        data = sock.recv(16)
-        amount_received += len(data)
-        print >>sys.stderr, 'received "%s"' % data
 
-finally:
-    print >>sys.stderr, 'closing socket'
-    sock.close()
+    while amount_received < amount_expected:
+        message = sock.recv(1024)
+        amount_received += len(message)
+        print (message.decode('utf-8'))
+
+print ('Fechando o socket')
+sock.close()
 
