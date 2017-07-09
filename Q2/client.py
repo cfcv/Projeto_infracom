@@ -10,12 +10,13 @@ def evalCommand(c, sock):
 			tam = int(data.split(b'%')[1])
 			i = 0
 			data = b''
-			file = open(spath, 'w')
+			file = open(spath, 'w+')
 			while i < tam:
 				data = sock.recv(4096)
 				file.write(data.decode())
 				i += 4096
 			print("Arquivo:\n" + data.decode())
+			file.close()
 		else:
 			print(data.decode())
 	elif c == 2:
@@ -25,9 +26,12 @@ def evalCommand(c, sock):
 		aux = file.read()
 		sock.send(b'pushfile%'+dpath.encode()+b'%'+str(len(aux)).encode())
 		sock.send(aux.encode())
+		file.close()
+		feedback = sock.recv(1024)
+		print(feedback.decode())
 	elif c == 3:
 		path = input("Digite caminho do diretorio: ")
-		sock.send(b'createdir%'+path)
+		sock.send(b'createdir%'+path.encode())
 		feedback = sock.recv(1024)
 		print(feedback.decode())
 	elif c == 4:
@@ -75,7 +79,7 @@ while True:
 		  "[9] -> quit\n")
 	try:
 		command = int(input("escolha: "))
-		evalCommand(command, sock)
 	except:
 		print("Digite apenas um numero")
 		continue
+	evalCommand(command, sock)

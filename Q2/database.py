@@ -49,8 +49,11 @@ class DataBase(object):
         if (self.userExists(usr)):
             self.cur.execute("""SELECT id FROM Users WHERE login=(?)""", (usr,))
             usrID = self.cur.fetchone()[0]
-            self.cur.execute("""INSERT INTO UsrFile(usrID, fpath) VALUES (?,?)""", (usrID, fpath))
-            self.conn.commit()
+            try:
+                self.cur.execute("""INSERT INTO UsrFile(usrID, fpath) VALUES (?,?)""", (usrID, fpath))
+                self.conn.commit()
+            except:
+                print("Compartilhamento já existente.")
             return True
         else:
             print("User " + usr + " does not exist.")

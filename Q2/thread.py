@@ -70,10 +70,11 @@ class Thread:
             print("Executando comando createdir")
             pathName = lista[1] + "/"
             try:
-                self.__createDir(lista)
-                self.conSock.send(b'Diretorio criado com sucesso.')
+                self.__createDir(pathName)
             except:
                 self.conSock.send(b'Houve um erro na criacao do diretorio.')
+                return
+            self.conSock.send(b'Diretorio criado com sucesso.')
 
 
     def __getUser(self, lista):
