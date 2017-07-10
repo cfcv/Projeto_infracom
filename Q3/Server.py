@@ -4,11 +4,11 @@ import select
 
 class Server:
     __playerList = []
-    __serverSock = []
+    __serverSock = None
 
     def __init__(self, Ssock):
         self.__serverSock = Ssock
-        print("Recebendo requisiçoes")
+        print("Recebendo requisiçoes"
 
     def insert (self, addr):
         print("Requisicao recebida de ", addr)
@@ -17,10 +17,28 @@ class Server:
             p1 = self.__playerList.pop(0)
             p2 = self.__playerList.pop(0)
             choice = random.randint(0,1)
-            self.__serverSock.sendto(str((p2,choice)).replace("(","").replace(")","").replace(" ","").encode(), p1)
-            self.__serverSock.sendto(str((p1,(choice+1)%2)).replace("(","").replace(")","").replace(" ","").encode(), p2)
+            try:
+                self.__serverSock.sendto(str((p2,choice)).replace("(","").replace(")","").replace(" ","").encode(), p1)
+            except:
+                # Se não conseguiu enviar para p1, coloca p2 na lista e retorna.
+                self.__playerList.append(p2)
+                return
+            try:
+                self.__serverSock.sendto(str((p1,(choice+1)%2)).replace("(","").replace(")","").replace(" ","").encode(), p2)
+            except:
+                # Se não conseguiu enviar para p2, retorna e espera p1 reenviar requisição, pois o mesmo acabou
+                # recebendo uma confirmação do servidor e terá que esperar o processo perceber a conexão a partir do timeout
+                return
+            return
         else:
             self.__serverSock.sendto(b'Wait Opponent',addr)
+
+    def inside(self, addr) -> bool:
+        if addr in self.__playerList:
+            return True
+        else:
+            return False
+
 
 
 random.seed(None)
@@ -35,7 +53,7 @@ while 1:
     for sock in ready_to_read:  # se ready_to_read nao for uma lista vazia executa isso
         try:
             msg, addr = sock.recvfrom(1024)
-            if msg == b'Get Game':
+            if msg == b'Get Game'and not Serv.inside(addr):
                 Serv.insert(addr)
         except:
             pass

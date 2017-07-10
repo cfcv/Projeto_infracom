@@ -38,12 +38,15 @@ class Game:
 
     def initSock(self):
         """ Inicialza o socket do jogador. """
-        self.__me = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        if self.__me == None:
+            self.__me = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.__me.sendto(b'Get Game', (HOST, PORT))
+        self.timer1 = time.perf_counter()
         return
 
     def connect(self):
         """ Recebe o endereço do adversário selecionado pelo servidor """
+        self.past = time.perf_counter()
         ret = self.__nbRecv()
         if type(ret) == type((1,2)):
             msg, addr = ret
@@ -63,8 +66,11 @@ class Game:
                 print("Jogador " + Phost + " " + str(Pport) + " Contactado")
                 self.__me.sendto(b'Ola jogador', (Phost, Pport))    #
                 self.timer1 = time.perf_counter()
+                self.__Opon = (Phost, Pport)
                 self.__gui.root.after(delay, self.__waitConf)
                 return
+            elif self.past - self.timer1 > 2:
+                self.initSock()
         self.__gui.root.after(delay, self.connect)
         return
 
@@ -74,8 +80,7 @@ class Game:
         ret = self.__nbRecv()
         if type(ret) == type((1,2)):
             msg, addr = ret
-            if msg == b'Ola jogador':
-                self.__Opon = addr
+            if msg == b'Ola jogador' and addr == self.__Opon:
                 self.__gui.root.after(delay, self.run)
                 self.__gui.info.configure(text = "Conectado")
                 print("Jogador confirmou")
@@ -84,6 +89,7 @@ class Game:
         else:
             past = time.perf_counter()
             if past - self.timer1 >= 10:
+                print("game reset timeout. Sending request to server.")
                 self.__me.sendto(b'Get Game', (HOST,PORT))
                 self.__gui.root.after(delay, self.connect)
             else:
