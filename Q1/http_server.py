@@ -15,7 +15,6 @@ text_response = """
 HTTP/1.1    200 OK\r
 Accept-Ranges:  bytes\r
 Content-Length: 38\r
-Keep-Alive: timeout=5,  max=100\r
 Connection: Keep-Alive\r
 Content-Type:   text/plain;  charset=UTF-8\r
 \r
