@@ -3,14 +3,14 @@
 import sys
 from socket import *
 
-### Coloque o IP do seu servidor aqui ###
-SERVER_IP   = '192.168.25.96'
+SERVER_IP = input('Digite o IP do servidor\n')
 ### Caso queira alterar essa porta lembre-se de altere tambem no client ###
 PORT_NUMBER_SERVER = 10003
 
 
 sock = socket(AF_INET, SOCK_STREAM)
 sock.connect( (SERVER_IP, PORT_NUMBER_SERVER) )
+print("Conexao estabelecida\n")
 
 message = ""
 while str(message).upper().find("SAIR") < 0:
@@ -29,6 +29,8 @@ while str(message).upper().find("SAIR") < 0:
         message = sock.recv(1024)
         amount_received += len(message)
         print (message.decode('utf-8'))
+
+    print()
 
 print ('Fechando o socket')
 sock.close()

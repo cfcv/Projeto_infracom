@@ -9,8 +9,6 @@ PORT_TCP = 10003
 sock = socket(AF_INET, SOCK_STREAM)
 HOST = gethostbyname('0.0.0.0')
 sock.bind( (HOST, PORT_TCP) )
-# O numero maximo de conexoes possivel não passa de 1 pois em nosso codigo ao
-# se conectar o servidor fica 'preso' na conexao com aquele cliente.
 sock.listen(1)
 
 while True:
@@ -30,4 +28,5 @@ while True:
             break
         
     print ()
-    connection.close()
+
+connection.close()

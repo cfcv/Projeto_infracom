@@ -3,17 +3,13 @@
 import sys
 from socket import *
 
-### Coloque o IP do seu servidor aqui ###
-SERVER_IP   = '192.168.25.96'
-### Escolha uma porta ###
-# PORT_NUMBER = 50000
+SERVER_IP = input('Digite o IP do servidor\n')
 ### Caso queira alterar essa porta lembre-se de altere tambem no client ###
 PORT_NUMBER_SERVER = 50003
 
 
 mySocket = socket( AF_INET, SOCK_DGRAM )
 hostName = gethostbyname( '0.0.0.0' )
-# mySocket.bind( (hostName, PORT_NUMBER) )
 
 
 data = ""
