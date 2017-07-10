@@ -1,8 +1,7 @@
 # How to use #
 
 ### udp_client.py / udp_server.py ###
-Alterar o IP do servidor
+Executar o server e depois o client
 
 ### udp_client.py / udp_server.py ###
-Alterar o IP do servidor
-
+Executar o server e depois o client
